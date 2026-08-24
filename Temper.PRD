@@ -1,0 +1,2318 @@
+# TEMPER v2
+
+## Product Requirements Document
+**Version:** 1.0
+**Status:** LOCKED FOR BUILD
+**Hackathon:** Creative Minds Jam #1: Hong Kong
+**Track:** Moderation & Community Assistance
+**Submission Deadline:** August 28, 2026
+**Product Type:** Persistent Agentic Moderation Infrastructure
+**Core AI Layer:** Minds by Animoca Brands
+**Primary Demo Surface:** Telegram + Web Dashboard
+
+---
+
+# 1. Executive Summary
+TEMPER is a persistent moderation Mind for creator communities that detects **emergent harm**: harmful social behavior that does not exist inside any single message, but emerges across multiple interactions over time.
+
+Traditional moderation systems evaluate messages individually.
+
+They ask:
+
+> Is this message toxic?
+TEMPER asks a different question:
+
+> Is this community becoming harmful to one person?
+A creator community may contain five messages that are individually harmless:
+
+- “interesting take lol”
+- “bro really thought he cooked”
+- “💀”
+- “welcome to the server 😂”
+- “maybe read first next time”
+A traditional moderation system may classify all five as safe.
+
+But if five different members direct those messages toward one newcomer within ninety seconds, the collective interaction may constitute a dogpile.
+
+The same five messages between six long-term friends may be harmless banter.
+
+The content is identical.
+
+The interaction pattern is identical.
+
+The difference is **history**.
+
+TEMPER combines deterministic interaction signals with persistent Minds memory to distinguish between these cases.
+
+Its core proposition is:
+
+> **TEMPER detects harm between messages, not inside them.**
+Its defining demonstration is:
+
+> **Same words. Same pattern. Different history.**
+One interaction is friendly banter.
+
+The other is collective pressure.
+
+TEMPER remembers the difference.
+
+---
+
+# 2. Product Thesis
+Modern moderation is primarily message-centric.
+
+Most systems operate on signals such as:
+
+- banned words
+- toxicity scores
+- spam frequency
+- message-level sentiment
+- explicit threats
+- direct policy violations
+This approach misses a class of community harm that emerges from **relationships, timing, repetition, and collective behavior**.
+
+A message can be harmless in isolation while participating in a harmful trajectory.
+
+TEMPER introduces:
+
+## Emergent Harm Moderation
+Instead of asking only:
+
+> What does this message contain?
+TEMPER also asks:
+
+- Who is targeting whom?
+- How many people are converging on the same person?
+- How quickly is that convergence happening?
+- Is the target new to the community?
+- Do these people have an established history?
+- Has similar behavior previously been reciprocal?
+- Has similar behavior previously caused disengagement?
+- Which intervention worked in comparable incidents?
+TEMPER therefore treats moderation as a **temporal and relational problem**, not only a text-classification problem.
+
+---
+
+# 3. Core Product Statement
+
+> **TEMPER is a persistent moderation Mind that combines real-time interaction patterns with long-term community memory to distinguish friendly banter from collective pressure, intervene autonomously when necessary, and learn from the outcome of every incident.**
+
+---
+
+# 4. Problem
+Creators increasingly build communities across Telegram, Discord, livestream chats, private groups, membership platforms, and social networks.
+
+As these communities grow, creators lose visibility into social context.
+
+Traditional moderation systems may successfully catch:
+
+- explicit harassment
+- slurs
+- spam
+- threats
+- prohibited content
+But they struggle with:
+
+- dogpiling
+- coordinated ridicule
+- repeated social pressure
+- newcomer intimidation
+- clique-driven exclusion
+- escalating group dynamics
+The immediate MVP focuses on only one of these:
+
+# Dogpiling
+A dogpile occurs when multiple members rapidly converge on one target in a way that becomes collectively hostile or intimidating, even when individual messages are not independently severe enough to trigger moderation.
+
+This is especially dangerous for:
+
+- newcomers
+- smaller creators
+- paid communities
+- expert communities
+- communities with strong existing social groups
+- high-context communities where profanity and sarcasm are common
+The moderation system must therefore understand not only **what was said**, but also **who said it, to whom, when, and within what historical relationship**.
+
+---
+
+# 5. Why Existing Moderation Fails
+Consider two scenarios.
+
+## Scenario A — Maya
+Maya joined the creator's Telegram community two days ago.
+
+Five established members respond to her within ninety seconds:
+
+> “interesting take lol”
+
+> “bro really thought he cooked”
+
+> “💀”
+
+> “welcome to the server 😂”
+
+> “maybe read first next time”
+A traditional moderation system returns:
+
+```
+SAFE
+SAFE
+SAFE
+SAFE
+SAFE
+```
+No message independently violates a rule.
+
+However:
+
+```
+5 unique members
+        ↓
+      Maya
+     90 sec
+```
+TEMPER detects a convergence pattern.
+
+It then evaluates historical context.
+
+Maya:
+
+- joined two days ago
+- has almost no previous interaction with these members
+- has no established banter relationship
+- is receiving repeated attention from a coordinated cluster
+TEMPER concludes:
+
+```
+COLLECTIVE PRESSURE DETECTED
+
+Verdict:
+Probable dogpile
+
+Recommended autonomous action:
+Gentle group redirect
+```
+
+---
+
+## Scenario B — Chris
+The exact same five members send the exact same five messages to Chris.
+
+The graph is identical:
+
+```
+5 unique members
+        ↓
+      Chris
+     90 sec
+```
+Traditional moderation again returns:
+
+```
+SAFE
+SAFE
+SAFE
+SAFE
+SAFE
+```
+TEMPER detects the same convergence signal.
+
+But persistent memory provides different context.
+
+Chris:
+
+- has been in the community for eight months
+- has extensive previous interaction with the same members
+- regularly participates in reciprocal teasing
+- has experienced similar exchanges without disengagement
+- has no history indicating that this behavior is unwanted
+TEMPER concludes:
+
+```
+NO INTERVENTION
+
+Reason:
+Established reciprocal banter history
+```
+Same words.
+
+Same pattern.
+
+Different history.
+
+Different decision.
+
+This contrast is the central proof that persistent memory is not an optional feature.
+
+It directly changes the moderation outcome.
+
+---
+
+# 6. Why Minds Is Core to the Product
+TEMPER must not be an ordinary moderation application with a Minds logo attached.
+
+Minds must be necessary to the decision loop.
+
+The architecture deliberately separates two responsibilities.
+
+## 6.1 Deterministic Signal Layer
+Normal application code detects structural signals.
+
+It answers questions such as:
+
+- How many unique users replied to the same target?
+- Within what time window?
+- How frequently has the cluster interacted with the target?
+- How long has the target been present?
+- Is the interaction pattern accelerating?
+- Has another convergence event recently occurred?
+This layer detects **that something unusual may be happening**.
+
+It does not decide what the interaction means.
+
+---
+
+## 6.2 Persistent Meaning Layer
+The TEMPER Mind evaluates the signal using historical community context.
+
+It answers:
+
+- Is this normal for these members?
+- Is the behavior reciprocal?
+- Is the target new?
+- Has this group interacted this way previously?
+- Did similar previous incidents cause disengagement?
+- Which interventions have worked before?
+- Does the creator's community tolerate this style of interaction?
+The Mind therefore decides:
+
+```
+BANTER
+```
+or:
+
+```
+COLLECTIVE PRESSURE
+```
+or, when uncertain:
+
+```
+OBSERVE
+```
+Without persistent context, the application cannot reliably distinguish the Maya scenario from the Chris scenario.
+
+That makes Minds part of the **core product state and decision engine**.
+
+---
+
+# 7. Product Principles
+TEMPER follows six product principles.
+
+## 7.1 Context Before Punishment
+The system should not react aggressively to a graph anomaly.
+
+A convergence signal is evidence, not a verdict.
+
+TEMPER evaluates context before intervention.
+
+---
+
+## 7.2 Minimum Necessary Intervention
+The goal is not to maximize moderation actions.
+
+The goal is to restore healthy interaction with the smallest effective intervention.
+
+Possible actions in the product vision include:
+
+```
+OBSERVE
+→ GENTLE REDIRECT
+→ PRIVATE NUDGE
+→ CREATOR REVIEW
+→ RESTRICT
+→ REMOVE
+```
+For the hackathon MVP, only the following autonomous action is implemented:
+
+```
+GENTLE GROUP REDIRECT
+```
+Destructive actions such as bans and removals are outside MVP scope.
+
+---
+
+## 7.3 Memory Must Change Decisions
+Memory is not displayed merely to satisfy a hackathon requirement.
+
+Two identical current events with different historical contexts must be capable of producing different outcomes.
+
+---
+
+## 7.4 Incidents Continue Across Sessions
+A moderation event does not end when TEMPER sends an intervention.
+
+The incident remains open.
+
+TEMPER later evaluates whether:
+
+- targeting continued
+- interaction normalized
+- the affected member re-engaged
+- escalation occurred
+This creates true continuity.
+
+---
+
+## 7.5 TEMPER Learns From Outcomes
+The agent remembers not only community members.
+
+It remembers its own actions.
+
+Example:
+
+```
+Incident #008
+Pattern:
+Newcomer dogpile
+
+Action:
+Gentle redirect
+
+Outcome:
+Successful
+```
+Later:
+
+```
+Incident #014
+Pattern:
+Similar newcomer convergence
+
+Relevant memory:
+Gentle redirect succeeded in comparable incident
+
+Decision:
+Use gentle redirect
+```
+TEMPER therefore accumulates operational knowledge about the community.
+
+---
+
+## 7.6 Protect Participation, Not Just Rules
+A healthy community is not defined only by the absence of prohibited messages.
+
+TEMPER measures whether people remain able and willing to participate.
+
+---
+
+# 8. Target Users
+
+## Primary Persona
+
+### Creator / Community Owner
+Characteristics:
+
+- operates a Telegram or Discord community
+- has an audience that is becoming difficult to manually moderate
+- cares about community quality
+- does not want overly aggressive automated moderation
+- wants new members to feel safe
+- cannot personally understand every social relationship
+Primary need:
+
+> Maintain community culture while scaling participation.
+
+---
+
+## Secondary Persona
+
+### Community Moderator
+Needs:
+
+- context before escalation
+- fewer false positives
+- visibility into emerging conflicts
+- evidence explaining why an incident was detected
+- history of previous interventions
+
+---
+
+## Future Persona
+
+### Community Platform / Infrastructure Provider
+Potential uses:
+
+- embedded trust and safety
+- moderation APIs
+- creator tooling
+- community health infrastructure
+Not part of hackathon MVP.
+
+---
+
+# 9. Primary User Story
+As a creator running a growing Telegram community,
+
+I want TEMPER to identify when multiple members begin collectively targeting one participant,
+
+so that harmful group dynamics can be interrupted even when no individual message violates a moderation rule,
+
+while avoiding false positives when the same behavior is normal banter between established members.
+
+---
+
+# 10. Secondary User Stories
+
+### US-02
+As a creator,
+
+I want to understand why TEMPER considered an interaction harmful,
+
+so that autonomous moderation remains explainable.
+
+### US-03
+As a creator,
+
+I want TEMPER to remember established relationships,
+
+so that normal community culture is not incorrectly suppressed.
+
+### US-04
+As a creator,
+
+I want TEMPER to follow up after an intervention,
+
+so that moderation success is measured by outcomes rather than actions.
+
+### US-05
+As a moderator,
+
+I want a timeline of detected incidents and agent decisions,
+
+so that I can review community patterns over time.
+
+---
+
+# 11. MVP Scope
+The hackathon MVP implements exactly one emergent-harm pattern:
+
+# Dogpile Detection
+The MVP includes:
+
+- Telegram group observer
+- reply and interaction event capture
+- convergence detection
+- target tenure tracking
+- interaction-history summary
+- persistent TEMPER Mind
+- contextual dogpile-vs-banter decision
+- gentle group intervention
+- persistent incident state
+- autonomous follow-up
+- outcome recording
+- creator-facing dashboard
+- Maya vs Chris demonstration
+
+---
+
+# 12. Explicit Non-Goals
+The following features are intentionally excluded from the hackathon build.
+
+TEMPER will NOT implement:
+
+- spam detection
+- scam detection
+- keyword filtering
+- general toxicity classification
+- sentiment dashboards
+- reputation scores
+- member ranking
+- creator CRM
+- audience growth automation
+- VIP-member discovery
+- content generation
+- automated banning
+- automated kicking
+- financial payments
+- tokens
+- NFTs
+- Web3 mechanics
+- multi-agent architecture
+- full Discord integration
+- Twitch integration
+- social exclusion detection
+- clique detection
+- coordinated raid detection
+- general-purpose community analytics
+These may appear only in the future roadmap.
+
+They must not consume MVP engineering time.
+
+---
+
+# 13. System Architecture
+
+```
+┌──────────────────────────┐
+│      Telegram Group      │
+│                          │
+│ messages / replies / IDs │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│     TEMPER Observer      │
+│                          │
+│ - capture messages       │
+│ - capture reply edges    │
+│ - member metadata        │
+│ - interaction events     │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│   Convergence Engine     │
+│                          │
+│ deterministic logic      │
+│                          │
+│ detects:                 │
+│ N users → one target     │
+│ within short window      │
+└─────────────┬────────────┘
+              │
+              │ Evidence Packet
+              ▼
+┌──────────────────────────┐
+│   Persistent TEMPER Mind │
+│                          │
+│ Minds                    │
+│                          │
+│ remembers:               │
+│ - members                │
+│ - relationships          │
+│ - incidents              │
+│ - interventions          │
+│ - outcomes               │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│     Decision Engine      │
+│                          │
+│ BANTER                   │
+│ OBSERVE                  │
+│ DOGPILE                  │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│   Intervention Layer     │
+│                          │
+│ MVP:                     │
+│ gentle group redirect    │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│     Incident Store       │
+│                          │
+│ OPEN                     │
+│ OBSERVING                │
+│ RECOVERED                │
+│ ESCALATING               │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│    Outcome Watcher       │
+│                          │
+│ checks later:            │
+│ - target re-engagement   │
+│ - repeated convergence   │
+│ - escalation             │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│ Persistent Mind Memory   │
+│                          │
+│ learns intervention      │
+│ outcome                  │
+└──────────────────────────┘
+```
+
+---
+
+# 14. Technical Stack
+
+## Application
+
+- TypeScript
+- Node.js 22+
+- Next.js
+- App Router
+- Tailwind CSS
+
+## Telegram
+Preferred:
+
+- grammY
+Alternative:
+
+- Telegraf
+Responsibilities:
+
+- receive group messages
+- read replies
+- identify sender and target
+- emit interaction events
+- send gentle group intervention
+The Telegram bot must be configured with the permissions required to observe the demo group's messages.
+
+---
+
+## AI / Agent Layer
+
+- Minds official TypeScript client
+- persistent Mind
+- stable conversation alias
+- persistent conversation history
+Example logical alias:
+
+```
+temper-demo-community
+```
+All incidents from the same demo community should use the same persistent community context.
+
+---
+
+## Storage
+Preferred for MVP:
+
+- SQLite
+Possible alternative:
+
+- local persistent JSON only for non-Minds operational metadata
+Minds must remain the source of persistent semantic community context.
+
+SQLite stores deterministic application state such as:
+
+- Telegram message IDs
+- reply edges
+- incidents
+- timestamps
+- target identities
+- intervention statuses
+
+---
+
+## Visualization
+Preferred:
+
+- lightweight custom SVG
+- React Flow
+Avoid unnecessary graph dependencies unless required.
+
+The relationship visualization must remain visually simple.
+
+---
+
+# 15. Data Model
+
+## Member
+
+```
+interface Member {
+  id: string
+  telegramUserId: string
+  username?: string
+  firstSeenAt: Date
+  lastSeenAt: Date
+  messageCount: number
+}
+```
+
+---
+
+## Interaction
+
+```
+interface Interaction {
+  id: string
+  sourceMemberId: string
+  targetMemberId: string
+  messageId: string
+  timestamp: Date
+  type: "reply" | "mention"
+}
+```
+
+---
+
+## ConvergenceSignal
+
+```
+interface ConvergenceSignal {
+  targetMemberId: string
+  sourceMemberIds: string[]
+  uniqueSourceCount: number
+  windowSeconds: number
+  recentInteractionCount: number
+  detectedAt: Date
+}
+```
+
+---
+
+## Incident
+
+```
+interface Incident {
+  id: string
+  targetMemberId: string
+  sourceMemberIds: string[]
+
+  status:
+    | "open"
+    | "observing"
+    | "recovered"
+    | "escalating"
+    | "dismissed"
+
+  verdict:
+    | "dogpile"
+    | "banter"
+    | "observe"
+
+  confidence?: number
+
+  detectedAt: Date
+
+  interventionType?:
+    | "gentle_group_redirect"
+
+  interventionAt?: Date
+
+  followUpAt?: Date
+
+  resolvedAt?: Date
+
+  mindReasoningSummary?: string
+}
+```
+
+---
+
+## IncidentOutcome
+
+```
+interface IncidentOutcome {
+  incidentId: string
+
+  targetReengaged: boolean
+
+  repeatConvergenceDetected: boolean
+
+  escalationDetected: boolean
+
+  outcome:
+    | "successful"
+    | "neutral"
+    | "failed"
+
+  evaluatedAt: Date
+}
+```
+
+---
+
+# 16. Convergence Detection
+The convergence engine is intentionally simple and deterministic.
+
+Example MVP rule:
+
+Trigger analysis when:
+
+```
+unique source members >= 5
+```
+and:
+
+```
+same target
+```
+within:
+
+```
+<= 120 seconds
+```
+These values must be configurable.
+
+Example:
+
+```
+const config = {
+  minimumSources: 5,
+  convergenceWindowSeconds: 120
+}
+```
+The convergence engine must NOT conclude that harassment occurred.
+
+It only produces:
+
+```
+CONVERGENCE SIGNAL
+```
+The semantic verdict belongs to the TEMPER Mind.
+
+---
+
+# 17. Evidence Packet
+When convergence is detected, TEMPER sends a structured evidence packet to the persistent Mind.
+
+Example:
+
+```
+{
+  "event": "convergence_detected",
+  "community": "temper-demo-community",
+  "target": {
+    "name": "Maya",
+    "tenure_days": 2
+  },
+  "pattern": {
+    "unique_sources": 5,
+    "window_seconds": 93,
+    "interaction_count": 5
+  },
+  "source_members": [
+    "Alex",
+    "John",
+    "Sam",
+    "Mike",
+    "Ben"
+  ],
+  "messages": [
+    "interesting take lol",
+    "bro really thought he cooked",
+    "💀",
+    "welcome to the server 😂",
+    "maybe read first next time"
+  ]
+}
+```
+
+---
+
+# 18. TEMPER Mind Responsibilities
+The persistent Mind must evaluate:
+
+## Relationship Context
+
+- target tenure
+- previous exchanges
+- interaction reciprocity
+- established banter history
+- recurring group relationships
+
+## Incident History
+
+- similar past convergence
+- previous dogpiles
+- previous false positives
+- previous interventions
+
+## Outcome History
+
+- which interventions reduced pressure
+- whether targets later re-engaged
+- whether incidents escalated
+
+## Community Context
+
+- tolerated communication style
+- expected sarcasm level
+- creator preferences
+- previous moderation precedent
+
+---
+
+# 19. Decision Contract
+The application must request a structured output.
+
+Example:
+
+```
+{
+  "verdict": "dogpile",
+  "confidence": 0.91,
+  "reason": "The target is a two-day-old member with no established relationship history with the five converging members.",
+  "action": "gentle_group_redirect",
+  "follow_up_minutes": 180
+}
+```
+Alternative:
+
+```
+{
+  "verdict": "banter",
+  "confidence": 0.94,
+  "reason": "The target and source members have eight months of reciprocal interaction history with multiple comparable exchanges.",
+  "action": "none",
+  "follow_up_minutes": null
+}
+```
+
+---
+
+# 20. Intervention
+For MVP, TEMPER has one autonomous intervention.
+
+## Gentle Group Redirect
+The purpose is to interrupt convergence without publicly accusing specific members.
+
+Example:
+
+> Let's keep this one constructive. Several replies are converging on the same person, and Maya is still new here.
+The final wording should remain:
+
+- calm
+- non-accusatory
+- concise
+- contextual
+- creator-safe
+TEMPER must not publicly call someone a harasser.
+
+---
+
+# 21. Autonomous Follow-Up
+An incident does not end after intervention.
+
+The Outcome Watcher schedules another evaluation.
+
+Example:
+
+```
+T+3 hours
+```
+The system checks:
+
+### Re-engagement
+Has Maya sent another message after the intervention?
+
+### Repeat Convergence
+Have multiple members again converged on Maya?
+
+### Escalation
+Did message frequency or hostility increase?
+
+---
+
+# 22. Incident Outcomes
+
+## Recovered
+Conditions may include:
+
+```
+target re-engaged
+AND
+no repeat convergence
+```
+Result:
+
+```
+RECOVERED
+```
+
+---
+
+## Escalating
+Conditions may include:
+
+```
+repeat convergence detected
+```
+or:
+
+```
+pressure continued after intervention
+```
+Result:
+
+```
+ESCALATING
+```
+For MVP, escalation is surfaced to the creator.
+
+No destructive autonomous action follows.
+
+---
+
+# 23. Learning Loop
+Every completed incident is sent back to the persistent Mind.
+
+Example:
+
+```
+Incident #014 completed.
+
+Initial pattern:
+Five established members converged on a two-day-old member.
+
+Verdict:
+Dogpile.
+
+Action:
+Gentle group redirect.
+
+Outcome:
+Successful.
+
+Evidence:
+Maya re-engaged after 3h 14m.
+No repeat convergence occurred.
+
+Remember this outcome for future comparable incidents.
+```
+The agent can later use this precedent.
+
+Core loop:
+
+```
+OBSERVE
+   ↓
+DETECT
+   ↓
+REMEMBER
+   ↓
+UNDERSTAND
+   ↓
+INTERVENE
+   ↓
+RETURN
+   ↓
+MEASURE
+   ↓
+LEARN
+   ↓
+IMPROVE NEXT DECISION
+```
+
+---
+
+# 24. Dashboard
+The dashboard exists to make the invisible social pattern visible.
+
+It should not become a generic analytics product.
+
+## Design Direction
+
+- black or near-black background
+- strong editorial typography
+- white primary text
+- restrained gray hierarchy
+- one restrained alert accent if needed
+- minimal borders
+- minimal cards
+- no visual clutter
+- no generic AI gradients
+- no excessive glowing effects
+- no cyberpunk styling
+TEMPER should look like serious trust-and-safety infrastructure.
+
+---
+
+# 25. Primary Dashboard Layout
+
+## Left Panel — Legacy Moderation
+Show incoming messages.
+
+Example:
+
+```
+Alex
+interesting take lol                       SAFE
+
+John
+bro really thought he cooked              SAFE
+
+Sam
+💀                                         SAFE
+
+Mike
+welcome to the server 😂                   SAFE
+
+Ben
+maybe read first next time                SAFE
+```
+Footer:
+
+```
+5 messages
+0 violations
+```
+
+---
+
+## Center — Interaction Pattern
+Minimal graph:
+
+```
+Alex ───┐
+John ───┤
+Sam ────┼────▶ Maya
+Mike ───┤
+Ben ────┘
+```
+Status:
+
+```
+TARGET CONVERGENCE DETECTED
+
+5 members → 1 target
+93 seconds
+```
+
+---
+
+## Right Panel — TEMPER Mind
+Show:
+
+```
+TARGET
+Maya
+
+TENURE
+2 days
+
+RELATIONSHIP HISTORY
+None established
+
+CURRENT PATTERN
+5 → 1 convergence
+
+MEMORY MATCH
+No comparable friendly precedent
+
+VERDICT
+Probable Dogpile
+
+ACTION
+Gentle Redirect
+```
+
+---
+
+# 26. The Contrast View
+The Maya vs Chris comparison is the single most important UI state.
+
+Example:
+
+MayaChrisMessagesSameSameConvergence5 → 15 → 1Legacy verdictSAFESAFETenure2 days8 monthsRelationship historyNoneExtensiveTEMPER verdictDOGPILEBANTERActionRedirectNoneLarge center statement:
+
+> **Same words. Same pattern. Different history.**
+Secondary:
+
+> **TEMPER remembers the difference.**
+
+---
+
+# 27. Community Recovery View
+After follow-up:
+
+```
+INCIDENT #014
+
+STATUS
+RECOVERED
+
+Target:
+Maya
+
+Intervention:
+Gentle Group Redirect
+
+Re-engagement:
+Confirmed
+
+Repeat Convergence:
+None
+
+Recovery Time:
+3h 14m
+
+Outcome:
+Successful
+```
+Optional aggregate demo metrics:
+
+```
+3 trajectories interrupted
+2 members recovered
+0 unnecessary bans
+2/3 interventions successful
+```
+These aggregate values may use seeded demo history.
+
+They must be clearly presented as demo-community history rather than fabricated production metrics.
+
+---
+
+# 28. Required Screens
+MVP requires only:
+
+1. Live Incident Dashboard
+2. Maya / Chris Contrast
+3. Incident Outcome / Recovery
+No additional dashboard pages are required.
+
+---
+
+# 29. Demo Dataset
+The hackathon demo should use a controlled Telegram group.
+
+Recommended users:
+
+- Maya
+- Chris
+- Alex
+- John
+- Sam
+- Mike
+- Ben
+The environment should contain pre-established persistent context.
+
+## Maya Context
+
+```
+Joined 2 days ago.
+Low interaction history.
+No known banter relationship with the cluster.
+```
+
+## Chris Context
+
+```
+Community member for 8 months.
+Frequent reciprocal interaction with the cluster.
+Previous similar exchanges remained friendly.
+```
+The actual five messages are reused in both scenarios.
+
+This is intentional.
+
+---
+
+# 30. Demo Golden Path
+Total target:
+
+**100–115 seconds**
+
+Maximum:
+
+**120 seconds**
+
+---
+
+## Scene 1 — The Problem
+
+### 0:00–0:12
+Narration:
+
+> Every moderation system reads messages. But communities don't become harmful one message at a time.
+Show TEMPER dashboard.
+
+---
+
+## Scene 2 — Legacy Blindness
+
+### 0:12–0:30
+Maya receives five individually harmless messages.
+
+Legacy moderation:
+
+```
+SAFE
+SAFE
+SAFE
+SAFE
+SAFE
+```
+Show:
+
+```
+0 violations
+```
+
+---
+
+## Scene 3 — Emergent Pattern
+
+### 0:30–0:42
+Interaction graph converges.
+
+```
+5 → 1
+```
+TEMPER:
+
+```
+COLLECTIVE PRESSURE DETECTED
+```
+
+---
+
+## Scene 4 — Memory
+
+### 0:42–0:58
+TEMPER retrieves contextual memory.
+
+```
+Maya
+Joined: 2 days ago
+
+Previous exchanges with cluster:
+0
+
+Established banter:
+No
+```
+Verdict:
+
+```
+PROBABLE DOGPILE
+```
+TEMPER posts a gentle redirect.
+
+---
+
+## Scene 5 — The Contrast
+
+### 0:58–1:20
+Exact same five messages.
+
+Exact same graph.
+
+Target:
+
+Chris.
+
+TEMPER retrieves:
+
+```
+Chris
+Member: 8 months
+
+Previous exchanges:
+47
+
+Comparable reciprocal banter:
+3 previous cases
+```
+Verdict:
+
+```
+NO ACTION
+```
+Screen:
+
+> **Same words. Same pattern. Different history.**
+
+---
+
+## Scene 6 — Continuity and Autonomy
+
+### 1:20–1:43
+Time jump.
+
+Creator does nothing.
+
+TEMPER autonomously returns to Maya's open incident.
+
+```
+Maya re-engaged
+No repeated convergence
+```
+Status:
+
+```
+RECOVERED
+```
+
+---
+
+## Scene 7 — Learning
+
+### 1:43–1:54
+TEMPER stores:
+
+```
+Gentle redirect successful
+for newcomer convergence
+```
+Show the intervention outcome entering persistent memory.
+
+---
+
+## Scene 8 — Closing
+
+### 1:54–2:00
+Black screen.
+
+# TEMPER
+
+> **Detect harm between messages, not inside them.**
+Secondary option:
+
+> **Moderation that remembers the difference.**
+
+---
+
+# 31. Success Criteria
+The MVP is successful only if all of the following are demonstrated.
+
+## SC-01
+Telegram interactions generate real reply/convergence events.
+
+## SC-02
+Five-to-one convergence triggers analysis.
+
+## SC-03
+Maya and Chris receive different agent verdicts despite identical current messages and identical convergence topology.
+
+## SC-04
+The difference is caused by persistent historical context.
+
+## SC-05
+At least one intervention is executed through the live system.
+
+## SC-06
+The incident remains open after intervention.
+
+## SC-07
+A later process autonomously evaluates the incident.
+
+## SC-08
+The outcome is persisted back into agent context.
+
+## SC-09
+The dashboard visually communicates the difference within seconds.
+
+## SC-10
+The full demo can be understood within two minutes.
+
+---
+
+# 32. North-Star Hackathon Proof
+The single most important technical proof is:
+
+```
+SAME CURRENT INPUT
++
+DIFFERENT PERSISTENT HISTORY
+=
+DIFFERENT MIND DECISION
+```
+If this works reliably, TEMPER proves deep Minds integration.
+
+If this does not work reliably, visual polish must not be prioritized over fixing it.
+
+---
+
+# 33. Evaluation Against Hackathon Criteria
+
+## Minds Integration Depth
+TEMPER relies on:
+
+- persistent community history
+- relationship context
+- incident continuity
+- intervention outcome memory
+- autonomous follow-up
+Memory directly changes the verdict.
+
+Target score:
+
+**10/10**
+
+---
+
+## Creator-Economy Problem Fit
+Creators need communities that remain healthy while scaling.
+
+TEMPER protects participation without forcing creators to personally understand every interpersonal dynamic.
+
+Target score:
+
+**10/10**
+
+---
+
+## Innovation & Creativity
+TEMPER shifts moderation from:
+
+```
+message classification
+```
+to:
+
+```
+interaction trajectory interpretation
+```
+The product detects collective harm invisible at the individual-message level.
+
+Target score:
+
+**9.5+/10**
+
+---
+
+## Execution & Completeness
+The product should demonstrate one narrow problem extremely well.
+
+Dogpile only.
+
+No feature creep.
+
+Target score:
+
+**10/10**
+
+---
+
+## Viability & Scalability
+Future surfaces:
+
+- Telegram
+- Discord
+- livestream communities
+- paid communities
+- creator memberships
+- gaming communities
+- professional communities
+Potential business model:
+
+- creator SaaS
+- usage-based trust-and-safety API
+- community-platform integration
+Target score:
+
+**9/10**
+
+---
+
+# 34. Product Positioning
+TEMPER should NOT be positioned as:
+
+- an AI chatbot
+- an AI moderator
+- a toxicity detector
+- a Telegram bot
+- a sentiment tool
+Preferred positioning:
+
+> **Persistent moderation intelligence for creator communities**
+or:
+
+> **Emergent Harm Moderation**
+or:
+
+> **The community immune system for creators**
+The latter is useful as a metaphor, but should not replace the technical product description.
+
+---
+
+# 35. Competitive Differentiation
+Traditional moderation:
+
+```
+MESSAGE
+→ classify
+→ punish
+```
+TEMPER:
+
+```
+INTERACTION PATTERN
+→ retrieve history
+→ interpret social context
+→ intervene proportionally
+→ observe outcome
+→ learn
+```
+Core differentiator:
+
+> Traditional moderation understands content.
+
+> TEMPER understands context across time.
+
+---
+
+# 36. Privacy Principles
+TEMPER processes community interaction data.
+
+The product should follow minimum-data principles.
+
+Store only what is necessary for:
+
+- interaction topology
+- member tenure
+- moderation context
+- incident history
+- intervention outcomes
+Avoid storing unrelated personal information.
+
+The product should never infer or expose sensitive personal attributes.
+
+The dashboard should explain moderation decisions using community behavior, not personal profiling.
+
+---
+
+# 37. Safety Principles
+TEMPER must not:
+
+- autonomously ban users in MVP
+- label people permanently as toxic
+- create public harassment scores
+- expose hidden member rankings
+- shame individuals publicly
+- falsely claim psychological intent
+- treat an anomaly as proof of wrongdoing
+Preferred language:
+
+```
+collective pressure detected
+```
+not:
+
+```
+these users are bullies
+```
+TEMPER evaluates interaction patterns, not human character.
+
+---
+
+# 38. Explainability
+Every verdict should expose a concise explanation.
+
+Bad:
+
+> AI confidence: 91%.
+Good:
+
+> Five members converged on a two-day-old member within 93 seconds. No established interaction history exists between the target and the cluster.
+For Chris:
+
+> The same convergence pattern exists, but the members have extensive reciprocal interaction history and multiple comparable exchanges without previous disengagement.
+The creator must understand the difference.
+
+---
+
+# 39. Failure Handling
+If Minds is unavailable:
+
+```
+STATUS:
+Context analysis unavailable
+
+ACTION:
+Observe only
+```
+TEMPER must not automatically intervene based solely on convergence.
+
+---
+If Telegram delivery fails:
+
+- store pending intervention
+- surface error in dashboard
+- do not falsely mark intervention as sent
+
+---
+If historical context is insufficient:
+
+Return:
+
+```
+OBSERVE
+```
+rather than forcing a dogpile/banter decision.
+
+---
+
+# 40. Testing Strategy
+
+## Unit Tests
+Test:
+
+- convergence window
+- unique source counting
+- duplicate messages
+- repeated source members
+- reply target detection
+- incident state transitions
+
+---
+
+## Integration Tests
+
+### Test A
+
+```
+Maya
+5 sources
+93 sec
+new member
+no relationship history
+```
+Expected:
+
+```
+DOGPILE
+```
+
+---
+
+### Test B
+
+```
+Chris
+same 5 sources
+same 93 sec
+established relationship history
+```
+Expected:
+
+```
+BANTER / NO ACTION
+```
+
+---
+
+### Test C
+Insufficient history.
+
+Expected:
+
+```
+OBSERVE
+```
+
+---
+
+### Test D
+Maya after successful intervention.
+
+Expected follow-up:
+
+```
+RECOVERED
+```
+
+---
+
+### Test E
+Repeat convergence after intervention.
+
+Expected:
+
+```
+ESCALATING
+```
+
+---
+
+# 41. Demo Reliability Requirements
+The demo must not depend on random LLM behavior.
+
+For the golden path:
+
+- prompts must be constrained
+- response schema must be validated
+- persistent context must be seeded beforehand
+- Minds outputs must be tested repeatedly
+- UI must gracefully handle delayed responses
+- fallback text must never fabricate a Minds verdict
+The hackathon demo should use real agent calls wherever technically feasible.
+
+---
+
+# 42. Build Order
+
+## Phase 1 — Observer
+Build:
+
+- Telegram bot
+- message capture
+- replies
+- interaction events
+- member first-seen timestamps
+Goal:
+
+```
+Telegram activity → structured events
+```
+
+---
+
+## Phase 2 — Convergence Engine
+Build:
+
+```
+5 unique users → same target → within configurable window
+```
+Goal:
+
+```
+structured events → convergence signal
+```
+
+---
+
+## Phase 3 — Minds Spike
+Before serious dashboard development:
+
+- create persistent community conversation
+- send context
+- send convergence event
+- receive structured verdict
+- read conversation history
+- repeat request
+Goal:
+
+```
+real persistent Minds workflow
+```
+
+---
+
+## Phase 4 — Maya / Chris Experiment
+Seed different historical contexts.
+
+Submit identical current events.
+
+Expected:
+
+```
+Maya → DOGPILE
+Chris → BANTER
+```
+Do not proceed until this works reliably.
+
+---
+
+## Phase 5 — Intervention
+Connect:
+
+```
+DOGPILE
+→ Telegram gentle redirect
+```
+
+---
+
+## Phase 6 — Incident State
+Persist:
+
+```
+OPEN
+→ OBSERVING
+→ RECOVERED / ESCALATING
+```
+
+---
+
+## Phase 7 — Autonomous Follow-Up
+Add scheduled reevaluation.
+
+Store outcome in Minds memory.
+
+---
+
+## Phase 8 — Dashboard
+Build only the three required visual states.
+
+---
+
+## Phase 9 — Demo
+Record the golden path.
+
+---
+
+## Phase 10 — Submission Polish
+Complete:
+
+- README
+- architecture documentation
+- setup instructions
+- screenshots
+- demo video
+- repository cleanup
+
+---
+
+# 43. Four-Day Execution Plan
+
+## Day 1 — Data Layer
+Complete:
+
+- repository
+- Next.js setup
+- Telegram bot
+- SQLite
+- member tracking
+- interaction events
+- convergence detector
+End-of-day requirement:
+
+```
+Real Telegram messages can trigger 5 → 1.
+```
+
+---
+
+## Day 2 — Minds Core
+Complete:
+
+- Minds client integration
+- stable conversation
+- persistent context
+- structured decision schema
+- Maya scenario
+- Chris scenario
+Critical milestone:
+
+> Same current pattern, different history, different verdict.
+This is the most important milestone of the project.
+
+---
+
+## Day 3 — Closed Loop + UI
+Complete:
+
+- group redirect
+- incident persistence
+- outcome watcher
+- recovery status
+- dashboard
+- contrast view
+
+---
+
+## Day 4 — Reliability + Submission
+Complete:
+
+- repeat full demo multiple times
+- fix flaky behavior
+- architecture document
+- README
+- screenshots
+- video recording
+- narration
+- repository cleanup
+- submission
+No new features.
+
+---
+
+# 44. Repository Structure
+Recommended:
+
+```
+temper/
+├── app/
+│   ├── api/
+│   │   ├── analyze/
+│   │   ├── incidents/
+│   │   └── telegram/
+│   ├── incidents/
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── components/
+│   ├── LegacyFeed.tsx
+│   ├── ConvergenceGraph.tsx
+│   ├── MindDecision.tsx
+│   ├── MemoryEvidence.tsx
+│   ├── IncidentStatus.tsx
+│   └── ContrastView.tsx
+│
+├── lib/
+│   ├── minds/
+│   │   ├── client.ts
+│   │   ├── prompts.ts
+│   │   ├── schema.ts
+│   │   └── community-memory.ts
+│   │
+│   ├── telegram/
+│   │   ├── bot.ts
+│   │   ├── observer.ts
+│   │   └── interventions.ts
+│   │
+│   ├── convergence/
+│   │   ├── detector.ts
+│   │   └── config.ts
+│   │
+│   ├── incidents/
+│   │   ├── service.ts
+│   │   └── follow-up.ts
+│   │
+│   └── db/
+│       ├── client.ts
+│       └── schema.ts
+│
+├── scripts/
+│   ├── seed-demo.ts
+│   └── run-followup.ts
+│
+├── docs/
+│   └── ARCHITECTURE.md
+│
+├── TEMPER-PRD.md
+├── README.md
+└── package.json
+```
+
+---
+
+# 45. Environment Variables
+Expected:
+
+```
+MINDS_API_KEY=
+TEMPER_MIND_ID=
+
+TELEGRAM_BOT_TOKEN=
+
+DATABASE_URL=
+
+DEMO_COMMUNITY_ID=
+```
+Never commit secrets.
+
+Provide:
+
+```
+.env.example
+```
+
+---
+
+# 46. README Core Narrative
+README should immediately communicate:
+
+## Problem
+Five safe messages can still form one harmful interaction.
+
+## Insight
+Moderation systems evaluate messages.
+
+Communities operate through relationships.
+
+## Product
+TEMPER combines interaction structure with persistent community memory.
+
+## Proof
+Same words.
+
+Same graph.
+
+Different history.
+
+Different decision.
+
+## Architecture
+Observer → Convergence → Mind → Intervention → Outcome → Memory.
+
+## Demo
+Show Maya and Chris.
+
+Avoid generic hackathon marketing language.
+
+---
+
+# 47. Future Vision
+After the hackathon, TEMPER may expand from dogpile detection into a broader emergent-harm system.
+
+Potential modules:
+
+## Social Exclusion
+Detect when a member's participation is systematically ignored relative to comparable members.
+
+## Clique Pressure
+Detect when a stable cluster repeatedly dominates or suppresses participation.
+
+## Coordinated Ridicule
+Detect repeated individually mild interactions that collectively target one person.
+
+## Raid Dynamics
+Detect externally coordinated waves.
+
+## Adaptive Intervention
+Learn which moderation interventions work best for different community cultures.
+
+## Multi-Platform Memory
+Maintain continuity across Telegram, Discord, livestream chats, and creator membership environments.
+
+None of these belong in the hackathon MVP.
+
+---
+
+# 48. Long-Term Product Vision
+TEMPER can become a trust-and-safety layer for online communities where moderation depends on social history.
+
+Traditional systems answer:
+
+> What happened in this message?
+TEMPER evolves toward answering:
+
+> What is happening to this community?
+The long-term system would model community interaction trajectories and provide:
+
+- emergent harm detection
+- contextual moderation
+- community-specific intervention learning
+- cross-session continuity
+- explainable social-context decisions
+
+---
+
+# 49. Business Model Hypothesis
+Potential future pricing:
+
+## Creator Tier
+Monthly subscription based on community size.
+
+## Professional Community Tier
+Advanced controls and moderator collaboration.
+
+## Platform/API Tier
+Usage-based pricing for community platforms.
+
+Business value is not measured in the number of messages removed.
+
+TEMPER protects the members that creators invested time and money to acquire.
+
+The desired outcome is:
+
+- healthier participation
+- fewer unnecessary interventions
+- improved newcomer survival
+- reduced moderator workload
+- more scalable communities
+
+---
+
+# 50. Final Product Definition
+TEMPER is not a toxicity classifier.
+
+TEMPER is not a moderation chatbot.
+
+TEMPER is not another community analytics dashboard.
+
+TEMPER is:
+
+# **Emergent Harm Moderation powered by persistent community memory.**
+It detects when individually harmless interactions combine into harmful collective behavior.
+
+It remembers enough community history to distinguish:
+
+```
+banter
+```
+from:
+
+```
+pressure
+```
+It acts proportionally.
+
+It returns later.
+
+It measures what happened.
+
+It remembers the result.
+
+And it becomes better at protecting that specific community over time.
+
+---
+
+# 51. Locked Hackathon Scope
+
+## Build
+
+- Telegram observer
+- interaction graph
+- dogpile convergence
+- Minds persistence
+- Maya / Chris contrast
+- contextual verdict
+- gentle intervention
+- autonomous follow-up
+- outcome memory
+- dashboard
+- demo
+
+## Do Not Build
+Everything else.
+
+---
+
+# 52. Final Submission Narrative
+
+### Hook
+
+> **Five safe messages can still create one unsafe community moment.**
+
+### Problem
+Traditional moderation evaluates messages independently.
+
+### Insight
+Harm can emerge through collective behavior.
+
+### Technology
+TEMPER combines structural interaction signals with persistent Minds memory.
+
+### Proof
+Maya and Chris receive identical messages from identical users.
+
+TEMPER produces opposite decisions because their histories differ.
+
+### Autonomy
+TEMPER intervenes, returns later, evaluates recovery, and remembers the outcome.
+
+### Value
+Creators can scale communities without losing the social context required to moderate them intelligently.
+
+### Closing
+
+# TEMPER
+
+> **Same words. Same pattern. Different history.**
+
+> **TEMPER remembers the difference.**
+
+---
+
+# 53. Lock Statement
+This PRD represents the hackathon build scope for TEMPER v2.
+
+The product thesis is frozen.
+
+The MVP pattern is frozen.
+
+The golden-path demo is frozen.
+
+No additional moderation categories should be introduced before submission.
+
+Any proposed feature must answer:
+
+> Does this materially improve the Maya-vs-Chris demonstration?
+If the answer is no, it is postponed.
+
+The engineering priority is now:
+
+> **Prove that identical present-day interaction patterns can produce different moderation decisions because a persistent Mind remembers different histories.**
+Once that proof is reliable, the remaining work is execution, presentation, and polish.
+
+**TEMPER v2 is locked.**
