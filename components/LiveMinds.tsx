@@ -67,6 +67,42 @@ const SOURCE_TONE: Record<Source, Tone> = {
   unavailable: "neutral",
 };
 
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "");
+}
+
+function extractDecision(text: string): Decision | null {
+  const clean = stripHtml(text).trim();
+  const start = clean.indexOf("{");
+  const end = clean.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(clean.slice(start, end + 1)) as Partial<Decision>;
+    if (
+      parsed &&
+      typeof parsed.verdict === "string" &&
+      typeof parsed.confidence === "number"
+    ) {
+      return parsed as Decision;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function humanSummary(text: string): string {
+  const name = text.match(/name: (\w+)/)?.[1];
+  const tenure = text.match(/tenure in community: (\d+) days/)?.[1];
+  if (name) {
+    return `Convergence evidence submitted for ${name}${
+      tenure ? ` — ${tenure} days in the community` : ""
+    }.`;
+  }
+  const firstLine = stripHtml(text).split("\n")[0] ?? "";
+  return firstLine.length > 140 ? `${firstLine.slice(0, 140)}…` : firstLine;
+}
+
 function ResultCard({ name, res }: { name: string; res: AnalyzeResponse }) {
   return (
     <Panel className="p-5">
@@ -258,17 +294,48 @@ export function LiveMinds() {
                 : "No conversation yet — run an analysis first."}
             </p>
           ) : (
-            <ul className="divide-y divide-white/[0.05]">
-              {history.map((entry) => (
-                <li key={entry.fingerprint} className="flex gap-3 py-2.5">
-                  <Pill tone={entry.sender === "mind" ? "purple" : "neutral"}>
-                    {entry.sender}
-                  </Pill>
-                  <span className="min-w-0 flex-1 text-sm leading-relaxed text-white/75">
-                    {entry.text}
-                  </span>
-                </li>
-              ))}
+            <ul className="divide-y divide-white/[0.06]">
+              {history.map((entry) => {
+                if (entry.sender === "mind") {
+                  const decision = extractDecision(entry.text);
+                  if (decision) {
+                    return (
+                      <li key={entry.fingerprint} className="py-3.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Pill tone="purple">Mind</Pill>
+                          <Pill tone={VERDICT_TONE[decision.verdict]}>
+                            {VERDICT_LABEL[decision.verdict]}
+                          </Pill>
+                          <span className="font-mono text-xs text-white/45">
+                            {(decision.confidence * 100).toFixed(0)}% confidence
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm leading-relaxed text-white/75">
+                          {decision.reason}
+                        </p>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={entry.fingerprint} className="py-3.5">
+                      <Pill tone="purple">Mind</Pill>
+                      <p className="mt-2 whitespace-pre-wrap text-xs text-white/50">
+                        {stripHtml(entry.text)}
+                      </p>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={entry.fingerprint} className="py-3.5">
+                    <div className="flex items-center gap-2">
+                      <Pill tone="neutral">Evidence</Pill>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-white/40">
+                      {humanSummary(entry.text)}
+                    </p>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
