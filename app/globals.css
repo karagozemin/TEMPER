@@ -7,6 +7,8 @@
     sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "SF Mono",
     Menlo, monospace;
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Palatino", Georgia,
+    "Times New Roman", serif;
   color-scheme: dark;
 }
 
@@ -63,3 +65,22 @@ body::before {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Fine grid used on the landing hero. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 72% 62% at 50% 38%, black, transparent 72%);
+  mask-image: radial-gradient(ellipse 72% 62% at 50% 38%, black, transparent 72%);
+}
+
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -14px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+.animate-drift { animation: drift 9s ease-in-out infinite; }
+
+.text-balance { text-wrap: balance; }

@@ -1,5 +1,5 @@
-import { Dashboard } from "@/components/Dashboard";
+import { Experience } from "@/components/Experience";
 
 export default function HomePage() {
-  return <Dashboard />;
+  return <Experience />;
 }

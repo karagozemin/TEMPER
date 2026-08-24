@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "TEMPER — Emergent Harm Moderation",
   description:
     "Detect harm between messages, not inside them. TEMPER combines interaction structure with persistent community memory.",
+  icons: {
+    icon: "/temper.png",
+    shortcut: "/temper.png",
+    apple: "/temper.png",
+  },
 };
 
 export default function RootLayout({

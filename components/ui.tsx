@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { motion } from "framer-motion";
 
 export function Panel({
   children,
@@ -9,7 +12,7 @@ export function Panel({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-white/[0.06] bg-ink-900/80 ${className}`}
+      className={`rounded-2xl border border-white/[0.06] bg-ink-900/80 transition-colors duration-300 hover:border-white/[0.12] ${className}`}
     >
       {children}
     </div>
@@ -119,5 +122,48 @@ export function Stat({
         {label}
       </div>
     </div>
+  );
+}
+
+type ButtonVariant = "primary" | "outline" | "ghost";
+type ButtonSize = "md" | "lg";
+
+const buttonBase =
+  "group relative inline-flex select-none items-center justify-center gap-2 rounded-xl font-semibold transition-colors";
+const buttonSizes: Record<ButtonSize, string> = {
+  md: "px-5 py-2.5 text-sm",
+  lg: "px-7 py-3.5 text-[15px]",
+};
+const buttonVariants: Record<ButtonVariant, string> = {
+  primary:
+    "bg-white text-[#0a0a0f] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(0,0,0,0.5),0_14px_36px_-14px_rgba(0,0,0,0.9)] hover:bg-white/90",
+  outline:
+    "border border-white/15 text-white hover:border-white/30 hover:bg-white/[0.04]",
+  ghost: "text-white/60 hover:text-white",
+};
+
+export function Button({
+  children,
+  onClick,
+  variant = "primary",
+  size = "md",
+  className = "",
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+}) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.025, y: -1 }}
+      whileTap={{ scale: 0.955, y: 1 }}
+      transition={{ type: "spring", stiffness: 550, damping: 26 }}
+      onClick={onClick}
+      className={`${buttonBase} ${buttonSizes[size]} ${buttonVariants[variant]} ${className}`}
+    >
+      {children}
+    </motion.button>
   );
 }

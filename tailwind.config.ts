@@ -41,6 +41,15 @@ const config: Config = {
           "Menlo",
           "monospace",
         ],
+        display: [
+          "var(--font-display)",
+          "Iowan Old Style",
+          "Palatino Linotype",
+          "Palatino",
+          "Georgia",
+          "Times New Roman",
+          "serif",
+        ],
       },
       letterSpacing: {
         widest2: "0.18em",
