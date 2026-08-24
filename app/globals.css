@@ -84,3 +84,14 @@ body::before {
 .animate-drift { animation: drift 9s ease-in-out infinite; }
 
 .text-balance { text-wrap: balance; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner { animation: spin 0.8s linear infinite; }
+
+@keyframes indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+.progress-indeterminate { animation: indeterminate 1.6s ease-in-out infinite; }

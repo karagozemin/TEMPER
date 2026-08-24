@@ -103,6 +103,43 @@ function humanSummary(text: string): string {
   return firstLine.length > 140 ? `${firstLine.slice(0, 140)}…` : firstLine;
 }
 
+function Step({
+  state,
+  label,
+}: {
+  state: "done" | "active" | "pending";
+  label: string;
+}) {
+  return (
+    <li className="flex items-center gap-2.5">
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${
+          state === "done"
+            ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+            : state === "active"
+              ? "border-violet-400/50 bg-violet-500/10 text-violet-300"
+              : "border-white/10 text-white/20"
+        }`}
+      >
+        {state === "done" ? (
+          "✓"
+        ) : state === "active" ? (
+          <span className="spinner h-2 w-2 rounded-full border border-current border-t-transparent" />
+        ) : (
+          "·"
+        )}
+      </span>
+      <span
+        className={
+          state === "pending" ? "text-xs text-white/30" : "text-xs text-white/75"
+        }
+      >
+        {label}
+      </span>
+    </li>
+  );
+}
+
 function ResultCard({ name, res }: { name: string; res: AnalyzeResponse }) {
   return (
     <Panel className="p-5">
@@ -158,6 +195,8 @@ export function LiveMinds() {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [results, setResults] = useState<Array<{ name: string; res: AnalyzeResponse }>>([]);
   const [running, setRunning] = useState<"Maya" | "Chris" | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [stage, setStage] = useState<"connect" | "send" | "wait">("connect");
 
   const refreshHistory = useCallback(async () => {
     try {
@@ -174,6 +213,26 @@ export function LiveMinds() {
   useEffect(() => {
     refreshHistory();
   }, [refreshHistory]);
+
+  useEffect(() => {
+    if (!running) {
+      setElapsed(0);
+      setStage("connect");
+      return;
+    }
+    const startedAt = Date.now();
+    const tick = window.setInterval(
+      () => setElapsed(Math.floor((Date.now() - startedAt) / 1000)),
+      1000,
+    );
+    const t1 = window.setTimeout(() => setStage("send"), 1200);
+    const t2 = window.setTimeout(() => setStage("wait"), 3200);
+    return () => {
+      window.clearInterval(tick);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [running]);
 
   async function run(name: "Maya" | "Chris") {
     setRunning(name);
@@ -266,18 +325,50 @@ export function LiveMinds() {
         </div>
       </Panel>
 
-      {(results.length > 0 || running) && (
+      {running && (
+        <Panel className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="spinner inline-block h-4 w-4 rounded-full border-2 border-violet-400 border-t-transparent" />
+              <span className="text-sm font-medium text-white">
+                Analyzing {running}…
+              </span>
+            </div>
+            <span className="font-mono text-xs text-white/45">{elapsed}s</span>
+          </div>
+
+          <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="progress-indeterminate h-full w-1/3 rounded-full bg-gradient-to-r from-violet-500 to-violet-300" />
+          </div>
+
+          <ol className="mt-5 space-y-2.5">
+            <Step
+              state={stage === "connect" ? "active" : "done"}
+              label="Connecting to the Mind"
+            />
+            <Step
+              state={
+                stage === "connect"
+                  ? "pending"
+                  : stage === "send"
+                    ? "active"
+                    : "done"
+              }
+              label="Sending evidence packet"
+            />
+            <Step
+              state={stage === "wait" ? "active" : "pending"}
+              label="Waiting for the Mind to reply"
+            />
+          </ol>
+        </Panel>
+      )}
+
+      {results.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-2">
           {results.map(({ name, res }) => (
             <ResultCard key={name} name={name} res={res} />
           ))}
-          {running && (
-            <Panel className="flex items-center justify-center p-10">
-              <span className="text-sm text-white/40">
-                Asking the Mind… (can take a moment)
-              </span>
-            </Panel>
-          )}
         </div>
       )}
 
