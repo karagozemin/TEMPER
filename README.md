@@ -60,12 +60,14 @@ Observer → Convergence → Mind → Decision → Intervention → Incident →
 
 ## Demo
 
-Three dashboard views:
+Four dashboard views:
 
 1. **Live incident** — legacy feed (all SAFE), the 5 → 1 convergence graph, and
    the TEMPER Mind verdict.
 2. **Maya vs Chris** — the central contrast, side by side.
 3. **Recovery** — incident outcome and seeded demo metrics.
+4. **Live Minds** — run the analysis against the real Mind and read the
+   persistent conversation history.
 
 The golden path runs offline using a deterministic, clearly-labelled local
 evaluator, so the demo never depends on random LLM behaviour.

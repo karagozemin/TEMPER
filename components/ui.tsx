@@ -148,19 +148,22 @@ export function Button({
   variant = "primary",
   size = "md",
   className = "",
+  disabled = false,
 }: {
   children: ReactNode;
   onClick?: () => void;
   variant?: ButtonVariant;
   size?: ButtonSize;
   className?: string;
+  disabled?: boolean;
 }) {
   return (
     <motion.button
-      whileHover={{ scale: 1.025, y: -1 }}
-      whileTap={{ scale: 0.955, y: 1 }}
+      whileHover={disabled ? undefined : { scale: 1.025, y: -1 }}
+      whileTap={disabled ? undefined : { scale: 0.955, y: 1 }}
       transition={{ type: "spring", stiffness: 550, damping: 26 }}
       onClick={onClick}
+      disabled={disabled}
       className={`${buttonBase} ${buttonSizes[size]} ${buttonVariants[variant]} ${className}`}
     >
       {children}

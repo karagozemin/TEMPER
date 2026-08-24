@@ -128,12 +128,17 @@ export class MindsTemperMind implements TemperMind {
 
   private parseDecision(reply: MessageRecord): MindDecision {
     const text = (reply.messageText ?? "").trim();
-    const cleaned = text
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "")
-      .trim();
+
+    // Minds may wrap the JSON in <pre> tags, markdown fences, or stray prose.
+    // Extract the first balanced JSON object instead of assuming a clean body.
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) {
+      throw new MindsUnavailableError("Minds returned an invalid decision payload");
+    }
+
     try {
-      return parseMindDecision(JSON.parse(cleaned));
+      return parseMindDecision(JSON.parse(text.slice(start, end + 1)));
     } catch {
       throw new MindsUnavailableError("Minds returned an invalid decision payload");
     }

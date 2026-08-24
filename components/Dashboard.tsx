@@ -5,15 +5,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LiveDashboard } from "@/components/LiveDashboard";
 import { ContrastView } from "@/components/ContrastView";
 import { RecoveryView } from "@/components/RecoveryView";
+import { LiveMinds } from "@/components/LiveMinds";
+import { MindStatus } from "@/components/MindStatus";
 import { Logo } from "@/components/Logo";
-import { Pill } from "@/components/ui";
 
-type View = "live" | "contrast" | "recovery";
+type View = "live" | "contrast" | "recovery" | "minds";
 
 const TABS: Array<{ id: View; label: string }> = [
   { id: "live", label: "Live incident" },
   { id: "contrast", label: "Maya vs Chris" },
   { id: "recovery", label: "Recovery" },
+  { id: "minds", label: "Live Minds" },
 ];
 
 export function Dashboard() {
@@ -39,7 +41,7 @@ export function Dashboard() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <Pill tone="purple">Demo mode</Pill>
+            <MindStatus />
           </div>
         </div>
 
@@ -79,6 +81,7 @@ export function Dashboard() {
             {view === "live" && <LiveDashboard />}
             {view === "contrast" && <ContrastView />}
             {view === "recovery" && <RecoveryView />}
+            {view === "minds" && <LiveMinds />}
           </motion.div>
         </AnimatePresence>
       </main>
