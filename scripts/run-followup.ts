@@ -1,6 +1,13 @@
 // Runs autonomous follow-up on all open/observing incidents.
 // Usage: npm run followup
 
+import { loadEnvFile } from "node:process";
+try {
+  loadEnvFile();
+} catch {
+  // .env is optional; defaults apply without it.
+}
+
 import { listIncidents } from "../lib/incidents/service";
 import { listInteractions } from "../lib/db/interactions";
 import { runFollowUp } from "../lib/engine";

@@ -11,7 +11,7 @@ import type {
   MindDecision,
 } from "@/lib/types";
 import { getDemoContext } from "@/lib/demo/dataset";
-import type { TemperMind } from "@/lib/minds/client";
+import type { HistoryEntry, TemperMind } from "@/lib/minds/client";
 
 const INSUFFICIENT_CONTEXT: MindDecision = {
   verdict: "observe",
@@ -92,5 +92,20 @@ export class DeterministicTemperMind implements TemperMind {
     _outcome: IncidentOutcome,
   ): Promise<void> {
     // Demo mode keeps precedent in the seeded dataset; no external write.
+  }
+
+  async getHistory(): Promise<HistoryEntry[]> {
+    return [
+      {
+        fingerprint: "demo-maya-context",
+        sender: "human",
+        text: "Seed: Maya joined 2 days ago with no prior interaction history.",
+      },
+      {
+        fingerprint: "demo-chris-context",
+        sender: "human",
+        text: "Seed: Chris has 8 months and 47 reciprocal exchanges with the cluster.",
+      },
+    ];
   }
 }

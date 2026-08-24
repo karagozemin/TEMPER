@@ -1,9 +1,17 @@
-// Minds client abstraction (PRD section 14). The application depends on a
-// small `TemperMind` interface, not on a specific SDK, so the official Minds
-// TypeScript client can be swapped in here without touching the rest of the
-// product. When no Minds credentials are configured the system degrades to
-// OBSERVE-only — it never fabricates a verdict (PRD section 39).
+// Official Minds client integration (PRD section 14).
+//
+// TEMPER talks to Minds through @animocabrands/minds-client-lib, which connects
+// to the Builder API automatically — no endpoint URL is hard-coded or
+// constructed here. Authentication uses MINDS_BUILDER_API_KEY; TEMPER_MIND_ID
+// selects the Mind; a stable alias keeps all incidents in ONE persistent
+// conversation (the same-alias → same-Mind → persistent-history proof).
 
+import {
+  createMindsClient,
+  MindsApiError,
+  type MessageRecord,
+  type MindsClient,
+} from "@animocabrands/minds-client-lib";
 import type {
   EvidencePacket,
   Incident,
@@ -11,14 +19,23 @@ import type {
   MindDecision,
 } from "@/lib/types";
 import { parseMindDecision } from "@/lib/minds/schema";
+import { buildEvidencePrompt, buildOutcomePrompt } from "@/lib/minds/prompts";
 import { DeterministicTemperMind } from "@/lib/minds/deterministic";
 
 export type MindSource = "minds" | "deterministic-demo" | "unavailable";
+
+export interface HistoryEntry {
+  fingerprint: string;
+  sender: "human" | "mind";
+  text: string;
+  at?: string;
+}
 
 export interface TemperMind {
   readonly source: MindSource;
   evaluate(evidence: EvidencePacket): Promise<MindDecision>;
   rememberOutcome(incident: Incident, outcome: IncidentOutcome): Promise<void>;
+  getHistory(limit?: number): Promise<HistoryEntry[]>;
 }
 
 export class MindsUnavailableError extends Error {
@@ -28,72 +45,107 @@ export class MindsUnavailableError extends Error {
   }
 }
 
-export interface MindsClientOptions {
-  apiUrl: string;
-  apiKey: string;
-  mindId: string;
-}
+export const MINDS_BUILDER_API_KEY_ENV = "MINDS_BUILDER_API_KEY";
+export const DEFAULT_ALIAS = "temper-demo-community";
+const REPLY_TIMEOUT_MS = 180_000;
 
 /**
- * HTTP adapter for the official Minds API. The exact endpoint is configurable
- * via MINDS_API_URL; the request body uses the decision contract defined in
- * this repository. Swap the internals for the official SDK if preferred.
+ * Real Minds integration. `ensureConversation` is idempotent, so the same
+ * alias always resolves to the same persistent conversation.
  */
 export class MindsTemperMind implements TemperMind {
   readonly source: MindSource = "minds";
 
-  constructor(private readonly options: MindsClientOptions) {}
+  private readonly client: MindsClient;
+  private readonly mindId: string;
+  private readonly alias: string;
+
+  constructor(options: {
+    builderApiKey: string;
+    mindId: string;
+    alias?: string;
+  }) {
+    this.client = createMindsClient({ builderApiKey: options.builderApiKey });
+    this.mindId = options.mindId;
+    this.alias = options.alias ?? DEFAULT_ALIAS;
+  }
 
   async evaluate(evidence: EvidencePacket): Promise<MindDecision> {
-    const response = await fetch(
-      `${this.options.apiUrl.replace(/\/$/, "")}/v1/minds/${this.options.mindId}/generate`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.options.apiKey}`,
-        },
-        body: JSON.stringify({
-          community: evidence.community,
-          event: evidence.event,
-          evidence,
-        }),
-      },
-    );
+    try {
+      await this.client.ensureConversation(this.alias, this.mindId);
 
-    if (!response.ok) {
-      throw new MindsUnavailableError(
-        `Minds request failed with status ${response.status}`,
-      );
+      const before = await this.client.getLatestHistoryFingerprint(this.alias);
+
+      await this.client.sendMessage({
+        alias: this.alias,
+        messageText: buildEvidencePrompt(evidence),
+      });
+
+      const outcome = await this.client.waitForReply({
+        alias: this.alias,
+        timeoutMs: REPLY_TIMEOUT_MS,
+        afterFingerprint: before,
+      });
+
+      if (outcome.timedOut) {
+        throw new MindsUnavailableError("Minds did not reply within the timeout window");
+      }
+
+      return this.parseDecision(outcome.reply);
+    } catch (error) {
+      if (error instanceof MindsUnavailableError) throw error;
+      if (error instanceof MindsApiError) {
+        throw new MindsUnavailableError(
+          `Minds request failed (${error.status} ${error.code}): ${error.message}`,
+        );
+      }
+      throw error;
     }
-
-    const raw = await response.json();
-    // The API may wrap the decision; be lenient about the wrapper key.
-    const payload = (raw as { decision?: unknown; data?: unknown }).decision ?? raw;
-    return parseMindDecision(payload);
   }
 
   async rememberOutcome(
     incident: Incident,
     outcome: IncidentOutcome,
   ): Promise<void> {
-    await fetch(
-      `${this.options.apiUrl.replace(/\/$/, "")}/v1/minds/${this.options.mindId}/message`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.options.apiKey}`,
-        },
-        body: JSON.stringify({
-          role: "system",
-          content: `Incident ${incident.id} outcome: ${outcome.outcome}. ` +
-            `target re-engaged: ${outcome.targetReengaged}; ` +
-            `repeat convergence: ${outcome.repeatConvergenceDetected}; ` +
-            `escalation: ${outcome.escalationDetected}.`,
-        }),
-      },
-    );
+    try {
+      await this.client.ensureConversation(this.alias, this.mindId);
+      await this.client.sendMessage({
+        alias: this.alias,
+        messageText: buildOutcomePrompt(incident, outcome),
+      });
+    } catch (error) {
+      // Outcome memory must never block the incident state transition.
+      if (error instanceof MindsApiError) return;
+      throw error;
+    }
+  }
+
+  /** Persistence proof: same alias → same Mind → same conversation history. */
+  async getHistory(limit = 50): Promise<HistoryEntry[]> {
+    const rows = await this.client.getHistory(this.alias, { limit });
+    return rows.map((row) => this.toHistoryEntry(row));
+  }
+
+  private parseDecision(reply: MessageRecord): MindDecision {
+    const text = (reply.messageText ?? "").trim();
+    const cleaned = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+    try {
+      return parseMindDecision(JSON.parse(cleaned));
+    } catch {
+      throw new MindsUnavailableError("Minds returned an invalid decision payload");
+    }
+  }
+
+  private toHistoryEntry(row: MessageRecord): HistoryEntry {
+    return {
+      fingerprint: row.fingerprint,
+      sender: row.senderType === 1 ? "human" : "mind",
+      text: row.messageText ?? "",
+      at: row.createdAt,
+    };
   }
 }
 
@@ -116,21 +168,25 @@ export class UnavailableTemperMind implements TemperMind {
   async rememberOutcome(): Promise<void> {
     // Nothing to persist without a Mind connection.
   }
+
+  async getHistory(): Promise<HistoryEntry[]> {
+    return [];
+  }
 }
 
 export function getTemperMind(): TemperMind {
-  const apiUrl = process.env.MINDS_API_URL;
-  const apiKey = process.env.MINDS_API_KEY;
+  const demoMode = process.env.DEMO_MODE === "true";
+  const builderApiKey = process.env.MINDS_BUILDER_API_KEY;
+  const mindId = process.env.TEMPER_MIND_ID ?? DEFAULT_ALIAS;
+  const alias = process.env.DEMO_COMMUNITY_ID ?? DEFAULT_ALIAS;
 
-  if (apiUrl && apiKey) {
-    return new MindsTemperMind({
-      apiUrl,
-      apiKey,
-      mindId: process.env.TEMPER_MIND_ID ?? "temper-demo-community",
-    });
+  // Real Minds flow — used for the submission (DEMO_MODE=false + key set).
+  if (!demoMode && builderApiKey) {
+    return new MindsTemperMind({ builderApiKey, mindId, alias });
   }
 
-  if (process.env.DEMO_MODE === "true" || process.env.NODE_ENV === "development") {
+  // Offline deterministic evaluator for local demos.
+  if (demoMode) {
     return new DeterministicTemperMind();
   }
 

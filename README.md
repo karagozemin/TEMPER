@@ -93,11 +93,13 @@ npm run dev                 # http://localhost:3000
 
 ## Configuration
 
-See `.env.example`. With `DEMO_MODE=true` and no Minds credentials, the
-deterministic evaluator powers the contrast. Set `MINDS_API_URL` +
-`MINDS_API_KEY` to use the real Minds client, and `TELEGRAM_BOT_TOKEN` to enable
-the live Telegram observer. When Minds is unavailable at runtime, TEMPER returns
-**OBSERVE** and never intervenes — it never fabricates a verdict.
+See `.env.example`. With `DEMO_MODE=true`, a deterministic offline evaluator
+powers the Maya / Chris contrast. To run the real Minds flow, set
+`DEMO_MODE=false` and `MINDS_BUILDER_API_KEY` — the official
+`@animocabrands/minds-client-lib` connects to the Builder API automatically, so
+no endpoint URL is needed. Set `TELEGRAM_BOT_TOKEN` to enable the live observer.
+When Minds is unavailable at runtime, TEMPER returns **OBSERVE** and never
+intervenes — it never fabricates a verdict.
 
 ## MVP scope
 

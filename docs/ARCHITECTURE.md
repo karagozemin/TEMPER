@@ -90,12 +90,23 @@ An invalid or unavailable response is never treated as a verdict.
 
 | Mode | Trigger | Behaviour |
 | --- | --- | --- |
-| `minds` | `MINDS_API_URL` + `MINDS_API_KEY` set | Real HTTP calls to the Minds API |
+| `minds` | `DEMO_MODE=false` + `MINDS_BUILDER_API_KEY` set | Official `@animocabrands/minds-client-lib` (`ensureConversation`, `sendMessage`, `waitForReply`, `getHistory`) |
 | `deterministic-demo` | `DEMO_MODE=true` (default in dev) | Offline evaluator encoding the Maya/Chris rules |
 | `unavailable` | neither | Returns `OBSERVE`; never intervenes |
 
 The `source` field is surfaced to the UI so the demo never fabricates a real
 Minds verdict.
+
+### Persistence proof
+
+All incidents for one community share a stable alias
+(`temper-demo-community`) and one Mind (`TEMPER_MIND_ID`). `ensureConversation`
+is idempotent, so the same alias always resolves to the same persistent
+conversation. `GET /api/minds/history` returns that conversation's history —
+the same-alias → same-Mind → persistent-history proof.
+
+For the live Maya/Chris contrast, seed two aliases (e.g. `temper-maya` and
+`temper-chris`) with different context, then submit identical evidence.
 
 ## Storage
 
