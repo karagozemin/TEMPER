@@ -3,6 +3,9 @@
   "version": "2.0.0",
   "private": true,
   "description": "TEMPER — Emergent Harm Moderation powered by persistent community memory (Minds).",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
