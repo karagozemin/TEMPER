@@ -1,76 +1,109 @@
-# TEMPER v2
+<p align="center">
+  <img src="temper.png" alt="TEMPER" width="250" />
+</p>
 
-> **Detect harm between messages, not inside them.**
+<h1 align="center">TEMPER</h1>
 
-TEMPER is a persistent moderation Mind for creator communities. It detects
+<p align="center">
+  <b>Detect harm between messages, not inside them.</b><br />
+  <i>Emergent Harm Moderation powered by persistent community memory.</i>
+</p>
+
+<p align="center">
+  Telegram &nbsp;·&nbsp; Minds by Animoca Brands &nbsp;·&nbsp; Next.js &nbsp;·&nbsp; SQLite
+</p>
+
+---
+
+TEMPER is a **persistent moderation Mind** for creator communities. It detects
 **emergent harm** — harmful social behaviour that does not exist inside any
 single message, but emerges across multiple interactions over time.
 
-## Problem
+---
+
+## The problem
 
 Five safe messages can still form one harmful interaction.
 
-A traditional moderation system evaluates messages independently and returns:
+A traditional moderation system evaluates messages **independently**:
 
 ```
 SAFE  SAFE  SAFE  SAFE  SAFE
 ```
 
 But when five different members direct those same five messages at one newcomer
-within ninety seconds, the collective interaction is a dogpile — even though no
-individual message violates a rule.
+within ninety seconds, the collective interaction is a **dogpile** — even though
+no individual message violates a rule.
 
-## Insight
+## The insight
 
-Moderation systems evaluate **messages**. Communities operate through
-**relationships**.
+Moderation systems evaluate **messages**.
+Communities operate through **relationships**.
 
-## Product
+Harm can emerge from *who is targeting whom, how fast, and whether they have a
+history* — not from what any single message contains.
+
+## What TEMPER does
 
 TEMPER combines deterministic interaction structure with **persistent community
-memory (Minds)** to distinguish friendly banter from collective pressure,
-intervene proportionally, return later to measure the outcome, and learn from
-the result.
+memory (Minds)** to:
 
-## Proof
+1. **Detect** when multiple members converge on one target — a structural signal.
+2. **Interpret** whether that convergence is friendly banter or collective
+   pressure — a persistent Mind decision.
+3. **Intervene proportionally** — for the MVP, a single gentle group redirect.
+4. **Return later** to measure whether the target re-engaged.
+5. **Learn** from the outcome, so the next decision is better.
 
-> Same words. Same pattern. Different history.
+## The proof
 
-Maya (2 days in the community, no relationship history) and Chris (8 months,
-extensive reciprocal history) receive the **identical** five messages from the
-**identical** five members. TEMPER returns **DOGPILE** for Maya and **BANTER**
-for Chris. The only difference is persistent history.
+> **Same words. Same pattern. Different history.**
 
-## Architecture
+| | **Maya** | **Chris** |
+| --- | --- | --- |
+| Messages | identical | identical |
+| Convergence | 5 → 1 | 5 → 1 |
+| Legacy verdict | SAFE | SAFE |
+| Tenure | 2 days | 8 months |
+| Relationship history | none | extensive |
+| **TEMPER verdict** | **DOGPILE** | **BANTER** |
+| Action | redirect | none |
+
+Maya and Chris receive the *exact same five messages* from the *exact same five
+members*. TEMPER returns opposite decisions because a persistent Mind remembers
+different histories.
+
+## How it works
 
 ```
 Observer → Convergence → Mind → Decision → Intervention → Incident → Follow-up → Memory
 ```
 
-| Stage | Responsibility |
+The full system architecture, data model, decision loop and incident lifecycle —
+with diagrams — live in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)**.
+
+## Live demo
+
+The dashboard has four views:
+
+| View | What it shows |
 | --- | --- |
-| Observer | Capture Telegram replies/mentions as interaction events |
-| Convergence | Detect N unique sources → one target within a window (deterministic) |
-| Mind | Interpret the signal using persistent community memory (Minds) |
-| Decision | BANTER / OBSERVE / DOGPILE |
-| Intervention | Gentle group redirect (the only autonomous MVP action) |
-| Incident | OPEN → OBSERVING → RECOVERED / ESCALATING |
-| Follow-up | Re-evaluate after the intervention |
-| Memory | Persist the outcome back into agent context |
+| **Live incident** | Legacy feed (all `SAFE`), the 5 → 1 convergence graph, TEMPER verdict |
+| **Maya vs Chris** | The central contrast, side by side |
+| **Recovery** | Incident outcome + seeded demo metrics |
+| **Live Minds** | Run a real analysis against the live Mind and read its persistent history |
 
-## Demo
+The golden path runs offline via a deterministic, clearly-labelled evaluator so
+the demo never depends on random LLM behaviour. Set `DEMO_MODE=false` and a
+Builder API key to run it against **real Minds**.
 
-Four dashboard views:
+## Tech stack
 
-1. **Live incident** — legacy feed (all SAFE), the 5 → 1 convergence graph, and
-   the TEMPER Mind verdict.
-2. **Maya vs Chris** — the central contrast, side by side.
-3. **Recovery** — incident outcome and seeded demo metrics.
-4. **Live Minds** — run the analysis against the real Mind and read the
-   persistent conversation history.
-
-The golden path runs offline using a deterministic, clearly-labelled local
-evaluator, so the demo never depends on random LLM behaviour.
+- **TypeScript** · **Node.js 22+** · **Next.js (App Router)** · **Tailwind CSS**
+- **Minds** — `@animocabrands/minds-client-lib` (persistent Mind + conversation)
+- **Telegram** — grammY (observer + intervention)
+- **SQLite** — Node's built-in `node:sqlite` (deterministic app state)
+- **framer-motion** — dashboard animations
 
 ## Getting started
 
@@ -83,6 +116,15 @@ npm run seed                # seed the controlled demo dataset
 npm run dev                 # http://localhost:3000
 ```
 
+To run the **real Minds** flow, edit `.env`:
+
+```bash
+DEMO_MODE=false
+MINDS_BUILDER_API_KEY=<your-builder-api-key>
+TEMPER_MIND_ID=<your-mind-id>
+TELEGRAM_BOT_TOKEN=<your-bot-token>   # optional, for the live observer
+```
+
 ## Scripts
 
 | Command | Purpose |
@@ -92,29 +134,57 @@ npm run dev                 # http://localhost:3000
 | `npm run start` | Start the production server |
 | `npm run seed` | Seed the demo dataset into SQLite |
 | `npm run followup` | Run autonomous follow-up on open incidents |
+| `npm run contrast` | Run the live Maya/Chris contrast on real Minds |
+| `npm run bot` | Run the Telegram observer (long polling) |
+
+## Telegram
+
+Set `TELEGRAM_BOT_TOKEN`, then run `npm run bot`. Add the bot to a group and
+grant message-read permission. When members reply to or mention the same target,
+TEMPER turns those into interaction events; at `>=5` unique sources within the
+convergence window the engine emits a signal and — if the Mind returns a dogpile
+— the bot posts a **gentle group redirect**. For production, point Telegram's
+webhook at `/api/telegram`.
 
 ## Configuration
 
-See `.env.example`. With `DEMO_MODE=true`, a deterministic offline evaluator
-powers the Maya / Chris contrast. To run the real Minds flow, set
-`DEMO_MODE=false` and `MINDS_BUILDER_API_KEY` — the official
-`@animocabrands/minds-client-lib` connects to the Builder API automatically, so
-no endpoint URL is needed. Set `TELEGRAM_BOT_TOKEN` to enable the live observer.
+| Variable | Purpose |
+| --- | --- |
+| `DEMO_MODE` | `true` = offline deterministic evaluator · `false` = real Minds |
+| `MINDS_BUILDER_API_KEY` | Builder API key (the official client connects automatically — no URL) |
+| `TEMPER_MIND_ID` | The selected Mind id |
+| `DEMO_COMMUNITY_ID` | Stable conversation alias (default `temper-demo-community`) |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (enables the observer) |
+| `TELEGRAM_WEBHOOK_SECRET` | Optional secret for the `/api/telegram` webhook |
+| `DATABASE_URL` | SQLite path (default `file:./temper.db`) |
+
 When Minds is unavailable at runtime, TEMPER returns **OBSERVE** and never
 intervenes — it never fabricates a verdict.
 
 ## MVP scope
 
-The hackathon MVP implements exactly one emergent-harm pattern — **dogpile
-detection** — and nothing else. See `Temper.PRD` for the locked scope and
-explicit non-goals.
+The hackathon MVP implements exactly **one** emergent-harm pattern — **dogpile
+detection** — and nothing else. No bans, no toxicity scores, no keyword filters.
+See [`Temper.PRD`](Temper.PRD) for the locked scope and explicit non-goals.
+
+## Documentation
+
+- **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — system architecture, data
+  model, decision loop and incident lifecycle (with diagrams).
+- **[`Temper.PRD`](Temper.PRD)** — the locked product requirements document.
 
 ## Structure
 
 ```
 app/            Next.js App Router pages + API routes
-components/     Dashboard (3 views) + shared UI
-lib/            domain logic (minds, telegram, convergence, incidents, db, demo)
-scripts/        seed + follow-up runners
+components/     Dashboard (4 views) + shared UI
+lib/
+  minds/        Minds client, prompts, schema, deterministic evaluator, contrast
+  telegram/     observer, handler, interventions
+  convergence/  detector + config
+  incidents/    service, follow-up
+  db/           SQLite client + schema
+  demo/         seeded demo dataset
+scripts/        seed, follow-up, contrast, bot runners
 docs/           architecture documentation
 ```

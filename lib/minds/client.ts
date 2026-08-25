@@ -6,12 +6,7 @@
 // selects the Mind; a stable alias keeps all incidents in ONE persistent
 // conversation (the same-alias → same-Mind → persistent-history proof).
 
-import {
-  createMindsClient,
-  MindsApiError,
-  type MessageRecord,
-  type MindsClient,
-} from "@animocabrands/minds-client-lib";
+import type { MessageRecord, MindsClient } from "@animocabrands/minds-client-lib";
 import type {
   EvidencePacket,
   Incident,
@@ -49,6 +44,19 @@ export const MINDS_BUILDER_API_KEY_ENV = "MINDS_BUILDER_API_KEY";
 export const DEFAULT_ALIAS = "temper-demo-community";
 const REPLY_TIMEOUT_MS = 180_000;
 
+// The SDK is ESM-only, so its runtime is imported lazily. This keeps this
+// module loadable from CommonJS tooling too (e.g. `tsx` scripts).
+function isMindsApiError(
+  error: unknown,
+): error is { status: number; code: string; message: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    "code" in error
+  );
+}
+
 /**
  * Real Minds integration. `ensureConversation` is idempotent, so the same
  * alias always resolves to the same persistent conversation.
@@ -56,7 +64,8 @@ const REPLY_TIMEOUT_MS = 180_000;
 export class MindsTemperMind implements TemperMind {
   readonly source: MindSource = "minds";
 
-  private readonly client: MindsClient;
+  private client: MindsClient | null = null;
+  private readonly builderApiKey: string;
   private readonly mindId: string;
   private readonly alias: string;
 
@@ -65,23 +74,34 @@ export class MindsTemperMind implements TemperMind {
     mindId: string;
     alias?: string;
   }) {
-    this.client = createMindsClient({ builderApiKey: options.builderApiKey });
+    this.builderApiKey = options.builderApiKey;
     this.mindId = options.mindId;
     this.alias = options.alias ?? DEFAULT_ALIAS;
   }
 
+  private async getClient(): Promise<MindsClient> {
+    if (!this.client) {
+      const { createMindsClient } = await import(
+        "@animocabrands/minds-client-lib"
+      );
+      this.client = createMindsClient({ builderApiKey: this.builderApiKey });
+    }
+    return this.client;
+  }
+
   async evaluate(evidence: EvidencePacket): Promise<MindDecision> {
     try {
-      await this.client.ensureConversation(this.alias, this.mindId);
+      const client = await this.getClient();
+      await client.ensureConversation(this.alias, this.mindId);
 
-      const before = await this.client.getLatestHistoryFingerprint(this.alias);
+      const before = await client.getLatestHistoryFingerprint(this.alias);
 
-      await this.client.sendMessage({
+      await client.sendMessage({
         alias: this.alias,
         messageText: buildEvidencePrompt(evidence),
       });
 
-      const outcome = await this.client.waitForReply({
+      const outcome = await client.waitForReply({
         alias: this.alias,
         timeoutMs: REPLY_TIMEOUT_MS,
         afterFingerprint: before,
@@ -94,7 +114,7 @@ export class MindsTemperMind implements TemperMind {
       return this.parseDecision(outcome.reply);
     } catch (error) {
       if (error instanceof MindsUnavailableError) throw error;
-      if (error instanceof MindsApiError) {
+      if (isMindsApiError(error)) {
         throw new MindsUnavailableError(
           `Minds request failed (${error.status} ${error.code}): ${error.message}`,
         );
@@ -108,21 +128,23 @@ export class MindsTemperMind implements TemperMind {
     outcome: IncidentOutcome,
   ): Promise<void> {
     try {
-      await this.client.ensureConversation(this.alias, this.mindId);
-      await this.client.sendMessage({
+      const client = await this.getClient();
+      await client.ensureConversation(this.alias, this.mindId);
+      await client.sendMessage({
         alias: this.alias,
         messageText: buildOutcomePrompt(incident, outcome),
       });
     } catch (error) {
       // Outcome memory must never block the incident state transition.
-      if (error instanceof MindsApiError) return;
+      if (isMindsApiError(error)) return;
       throw error;
     }
   }
 
   /** Persistence proof: same alias → same Mind → same conversation history. */
   async getHistory(limit = 50): Promise<HistoryEntry[]> {
-    const rows = await this.client.getHistory(this.alias, { limit });
+    const client = await this.getClient();
+    const rows = await client.getHistory(this.alias, { limit });
     return rows.map((row) => this.toHistoryEntry(row));
   }
 

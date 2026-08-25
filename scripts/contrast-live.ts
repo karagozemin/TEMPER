@@ -8,7 +8,6 @@ try {
   // .env is optional; the script errors clearly if the key is missing.
 }
 
-import { createMindsClient } from "@animocabrands/minds-client-lib";
 import { runLiveContrast } from "../lib/minds/contrast";
 
 async function main(): Promise<void> {
@@ -18,6 +17,9 @@ async function main(): Promise<void> {
   if (!builderApiKey) throw new Error("MINDS_BUILDER_API_KEY is not set");
   if (!mindId) throw new Error("TEMPER_MIND_ID is not set");
 
+  const { createMindsClient } = await import(
+    "@animocabrands/minds-client-lib"
+  );
   const client = createMindsClient({ builderApiKey });
   console.log(`Running live contrast against Mind ${mindId}…\n`);
 

@@ -3,11 +3,18 @@
 // the IDENTICAL evidence to both and returns the two verdicts. This is the
 // "same words, same pattern, different history → different decision" proof.
 
-import {
-  createMindsClient,
-  MindsApiError,
-  type MindsClient,
-} from "@animocabrands/minds-client-lib";
+import type { MindsClient } from "@animocabrands/minds-client-lib";
+
+function isMindsApiError(
+  error: unknown,
+): error is { status: number; code: string; message: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    "code" in error
+  );
+}
 import { buildEvidencePacket } from "@/lib/demo/dataset";
 import { parseMindDecision } from "@/lib/minds/schema";
 import { buildEvidencePrompt } from "@/lib/minds/prompts";
@@ -103,12 +110,11 @@ export async function runLiveContrast(
         }
       }
     } catch (error) {
-      result.error =
-        error instanceof MindsApiError
-          ? `${error.status} ${error.code}: ${error.message}`
-          : error instanceof Error
-            ? error.message
-            : String(error);
+      result.error = isMindsApiError(error)
+        ? `${error.status} ${error.code}: ${error.message}`
+        : error instanceof Error
+          ? error.message
+          : String(error);
     }
 
     results.push(result);
