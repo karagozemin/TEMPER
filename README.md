@@ -136,6 +136,7 @@ TELEGRAM_BOT_TOKEN=<your-bot-token>   # optional, for the live observer
 | `npm run followup` | Run autonomous follow-up on open incidents |
 | `npm run contrast` | Run the live Maya/Chris contrast on real Minds |
 | `npm run bot` | Run the Telegram observer (long polling) |
+| `npm run scenario` | Run the golden-path dogpile scenario end-to-end |
 
 ## Telegram
 

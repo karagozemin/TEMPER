@@ -43,6 +43,21 @@ interface HistoryResponse {
   error?: string;
 }
 
+interface ScenarioStep {
+  target: string;
+  name: string;
+  tenureDays: number;
+  source: Source;
+  decision: Decision | null;
+  unavailableReason: string | null;
+  incidentId: string | null;
+  incidentStatus: string | null;
+}
+
+interface ScenarioResponse {
+  steps: ScenarioStep[];
+}
+
 const VERDICT_TONE: Record<Verdict, Tone> = {
   dogpile: "dogpile",
   banter: "banter",
@@ -197,6 +212,11 @@ export function LiveMinds() {
   const [running, setRunning] = useState<"Maya" | "Chris" | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [stage, setStage] = useState<"connect" | "send" | "wait">("connect");
+  const [scenarioRunning, setScenarioRunning] = useState(false);
+  const [scenarioElapsed, setScenarioElapsed] = useState(0);
+  const [scenarioResult, setScenarioResult] = useState<ScenarioResponse | null>(
+    null,
+  );
 
   const refreshHistory = useCallback(async () => {
     try {
@@ -234,6 +254,19 @@ export function LiveMinds() {
     };
   }, [running]);
 
+  useEffect(() => {
+    if (!scenarioRunning) {
+      setScenarioElapsed(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const tick = window.setInterval(
+      () => setScenarioElapsed(Math.floor((Date.now() - startedAt) / 1000)),
+      1000,
+    );
+    return () => window.clearInterval(tick);
+  }, [scenarioRunning]);
+
   async function run(name: "Maya" | "Chris") {
     setRunning(name);
     try {
@@ -264,6 +297,35 @@ export function LiveMinds() {
       ]);
     } finally {
       setRunning(null);
+    }
+  }
+
+  async function runScenarioNow() {
+    setScenarioRunning(true);
+    setScenarioResult(null);
+    try {
+      const res = await fetch("/api/scenario", { method: "POST" });
+      const data = (await res.json()) as ScenarioResponse;
+      setScenarioResult(data);
+      await refreshHistory();
+    } catch (error) {
+      setScenarioResult({
+        steps: [
+          {
+            target: "error",
+            name: "Scenario failed",
+            tenureDays: 0,
+            source: "unavailable",
+            decision: null,
+            unavailableReason:
+              error instanceof Error ? error.message : "Request failed",
+            incidentId: null,
+            incidentStatus: null,
+          },
+        ],
+      });
+    } finally {
+      setScenarioRunning(false);
     }
   }
 
@@ -325,6 +387,25 @@ export function LiveMinds() {
         </div>
       </Panel>
 
+      <Panel>
+        <PanelHeader
+          title="Golden-path scenario"
+          subtitle="5 members converge on Maya and Chris — one click"
+        />
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+          <Button
+            onClick={runScenarioNow}
+            disabled={scenarioRunning || running !== null}
+            className="disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {scenarioRunning ? "Running scenario…" : "Run scenario"}
+          </Button>
+          <span className="text-xs text-white/40">
+            Maya (newcomer) → dogpile · Chris (established) → banter
+          </span>
+        </div>
+      </Panel>
+
       {running && (
         <Panel className="p-6">
           <div className="flex items-center justify-between">
@@ -368,6 +449,41 @@ export function LiveMinds() {
         <div className="grid gap-6 lg:grid-cols-2">
           {results.map(({ name, res }) => (
             <ResultCard key={name} name={name} res={res} />
+          ))}
+        </div>
+      )}
+
+      {scenarioRunning && (
+        <Panel className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="spinner inline-block h-4 w-4 rounded-full border-2 border-violet-400 border-t-transparent" />
+              <span className="text-sm font-medium text-white">
+                Running golden-path scenario…
+              </span>
+            </div>
+            <span className="font-mono text-xs text-white/45">
+              {scenarioElapsed}s
+            </span>
+          </div>
+          <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="progress-indeterminate h-full w-1/3 rounded-full bg-gradient-to-r from-violet-500 to-violet-300" />
+          </div>
+        </Panel>
+      )}
+
+      {scenarioResult && scenarioResult.steps.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {scenarioResult.steps.map((step) => (
+            <ResultCard
+              key={step.target}
+              name={step.name}
+              res={{
+                source: step.source,
+                decision: step.decision,
+                unavailableReason: step.unavailableReason,
+              }}
+            />
           ))}
         </div>
       )}

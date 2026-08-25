@@ -11,7 +11,8 @@
     "seed": "tsx scripts/seed-demo.ts",
     "followup": "tsx scripts/run-followup.ts",
     "contrast": "tsx scripts/contrast-live.ts",
-    "bot": "tsx scripts/run-bot.ts"
+    "bot": "tsx scripts/run-bot.ts",
+    "scenario": "tsx scripts/run-scenario.ts"
   },
   "dependencies": {
     "@animocabrands/minds-client-lib": "^0.1.3",
