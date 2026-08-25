@@ -15,7 +15,8 @@
     "followup": "tsx scripts/run-followup.ts",
     "contrast": "tsx scripts/contrast-live.ts",
     "bot": "tsx scripts/run-bot.ts",
-    "scenario": "tsx scripts/run-scenario.ts"
+    "scenario": "tsx scripts/run-scenario.ts",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@animocabrands/minds-client-lib": "^0.1.3",

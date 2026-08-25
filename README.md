@@ -97,6 +97,28 @@ The golden path runs offline via a deterministic, clearly-labelled evaluator so
 the demo never depends on random LLM behaviour. Set `DEMO_MODE=false` and a
 Builder API key to run it against **real Minds**.
 
+## Screenshots
+
+**Landing**
+
+![Landing](docs/screenshots/landing.png)
+
+**Live incident** — legacy feed (all `SAFE`), the 5 → 1 convergence graph, TEMPER verdict
+
+![Live incident](docs/screenshots/live-incident.png)
+
+**Maya vs Chris** — the central contrast
+
+![Maya vs Chris](docs/screenshots/contrast.png)
+
+**Recovery** — incident outcome
+
+![Recovery](docs/screenshots/recovery.png)
+
+**Live Minds** — real Minds analysis + persistent history
+
+![Live Minds](docs/screenshots/live-minds.png)
+
 ## Tech stack
 
 - **TypeScript** · **Node.js 22+** · **Next.js (App Router)** · **Tailwind CSS**
@@ -137,6 +159,7 @@ TELEGRAM_BOT_TOKEN=<your-bot-token>   # optional, for the live observer
 | `npm run contrast` | Run the live Maya/Chris contrast on real Minds |
 | `npm run bot` | Run the Telegram observer (long polling) |
 | `npm run scenario` | Run the golden-path dogpile scenario end-to-end |
+| `npm test` | Run the test suite (convergence, Minds evaluator, follow-up) |
 
 ## Telegram
 
