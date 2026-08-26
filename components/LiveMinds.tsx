@@ -305,7 +305,21 @@ export function LiveMinds() {
     setScenarioResult(null);
     try {
       const res = await fetch("/api/scenario", { method: "POST" });
-      const data = (await res.json()) as ScenarioResponse;
+      const body = await res.text();
+      if (!body.trim()) {
+        throw new Error(`Scenario API returned an empty response (${res.status})`);
+      }
+
+      let data: ScenarioResponse & { error?: string };
+      try {
+        data = JSON.parse(body) as ScenarioResponse & { error?: string };
+      } catch {
+        throw new Error(`Scenario API returned an invalid response (${res.status})`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error ?? `Scenario request failed (${res.status})`);
+      }
       setScenarioResult(data);
       await refreshHistory();
     } catch (error) {

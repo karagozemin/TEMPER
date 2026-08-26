@@ -5,9 +5,20 @@ import { NextResponse } from "next/server";
 import { runScenario } from "@/lib/demo/scenario";
 
 export async function POST() {
-  const rawChatId = process.env.DEMO_CHAT_ID;
-  const chatId = rawChatId ? Number(rawChatId) : undefined;
+  try {
+    const rawChatId = process.env.DEMO_CHAT_ID;
+    const parsedChatId = rawChatId ? Number(rawChatId) : undefined;
+    const chatId = Number.isFinite(parsedChatId) ? parsedChatId : undefined;
 
-  const result = await runScenario(chatId);
-  return NextResponse.json(result);
+    const result = await runScenario(chatId);
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Scenario execution failed",
+        steps: [],
+      },
+      { status: 502 },
+    );
+  }
 }

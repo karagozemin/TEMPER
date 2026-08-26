@@ -80,6 +80,11 @@ export async function runScenario(chatId?: number): Promise<ScenarioResult> {
         incidentId: result.incident?.id ?? null,
         incidentStatus: result.incident?.status ?? null,
       };
+
+      // A scenario needs one verdict per target. Once convergence has fired,
+      // stop feeding the remaining synthetic messages; otherwise every later
+      // message can trigger another (potentially minutes-long) Minds request.
+      break;
     }
 
     steps.push(step);
