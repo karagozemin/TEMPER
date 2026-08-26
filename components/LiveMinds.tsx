@@ -56,6 +56,7 @@ interface ScenarioStep {
 
 interface ScenarioResponse {
   steps: ScenarioStep[];
+  error?: string;
 }
 
 const VERDICT_TONE: Record<Verdict, Tone> = {
@@ -217,6 +218,7 @@ export function LiveMinds() {
   const [scenarioResult, setScenarioResult] = useState<ScenarioResponse | null>(
     null,
   );
+  const [scenarioError, setScenarioError] = useState<string | null>(null);
 
   const refreshHistory = useCallback(async () => {
     try {
@@ -303,6 +305,7 @@ export function LiveMinds() {
   async function runScenarioNow() {
     setScenarioRunning(true);
     setScenarioResult(null);
+    setScenarioError(null);
     try {
       const res = await fetch("/api/scenario", { method: "POST" });
       const body = await res.text();
@@ -338,6 +341,7 @@ export function LiveMinds() {
           },
         ],
       });
+      setScenarioError(error instanceof Error ? error.message : "Request failed");
     } finally {
       setScenarioRunning(false);
     }
@@ -418,6 +422,27 @@ export function LiveMinds() {
             Maya (newcomer) → dogpile · Chris (established) → banter
           </span>
         </div>
+        {(scenarioRunning || scenarioResult || scenarioError) && (
+          <div className="border-t border-white/[0.06] px-5 py-3">
+            {scenarioRunning ? (
+              <p className="text-sm text-violet-300">
+                Scenario is running · {scenarioElapsed}s
+              </p>
+            ) : scenarioError ? (
+              <p className="text-sm text-red-300">
+                Scenario failed: {scenarioError}
+              </p>
+            ) : scenarioResult && scenarioResult.steps.length > 0 ? (
+              <p className="text-sm text-emerald-300">
+                Scenario completed successfully · {scenarioResult.steps.length} results
+              </p>
+            ) : (
+              <p className="text-sm text-amber-300">
+                Scenario finished without results.
+              </p>
+            )}
+          </div>
+        )}
       </Panel>
 
       {running && (
@@ -487,19 +512,36 @@ export function LiveMinds() {
       )}
 
       {scenarioResult && scenarioResult.steps.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {scenarioResult.steps.map((step) => (
-            <ResultCard
-              key={step.target}
-              name={step.name}
-              res={{
-                source: step.source,
-                decision: step.decision,
-                unavailableReason: step.unavailableReason,
-              }}
-            />
-          ))}
+        <div>
+          <p className="mb-3 text-xs font-medium uppercase text-white/40">
+            Scenario results
+          </p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {scenarioResult.steps.map((step) => (
+              <div key={step.target}>
+                <ResultCard
+                  name={step.name}
+                  res={{
+                    source: step.source,
+                    decision: step.decision,
+                    unavailableReason: step.unavailableReason,
+                  }}
+                />
+                {step.incidentId && (
+                  <p className="mt-2 px-1 font-mono text-xs text-white/40">
+                    Incident {step.incidentId} · {step.incidentStatus}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+
+      {scenarioResult && scenarioResult.steps.length === 0 && !scenarioError && (
+        <Panel className="p-5">
+          <p className="text-sm text-amber-300">Scenario finished without results.</p>
+        </Panel>
       )}
 
       <Panel>
