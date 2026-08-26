@@ -10,6 +10,15 @@ import { migrate } from "@/lib/db/schema";
 let db: DatabaseSync | null = null;
 
 function resolveDbPath(): string {
+  // Vercel's deployed filesystem is read-only. Even if a local-style
+  // DATABASE_URL is configured in the project settings, it cannot point into
+  // the deployment bundle; use the platform's writable temporary directory.
+  if (process.env.VERCEL) {
+    const dataDir = "/tmp/temper";
+    fs.mkdirSync(dataDir, { recursive: true });
+    return path.join(dataDir, "temper.db");
+  }
+
   const fromEnv = process.env.DATABASE_URL;
   if (fromEnv && fromEnv.length > 0) {
     // Accept both plain paths and file: URLs.
@@ -19,11 +28,7 @@ function resolveDbPath(): string {
       : path.resolve(process.cwd(), configured);
   }
 
-  // Vercel's deployed filesystem is read-only except for /tmp. Keep the
-  // local default convenient while allowing API routes to initialize there.
-  const dataDir = process.env.VERCEL
-    ? "/tmp/temper"
-    : path.join(process.cwd(), "data");
+  const dataDir = path.join(process.cwd(), "data");
   fs.mkdirSync(dataDir, { recursive: true });
   return path.join(dataDir, "temper.db");
 }
