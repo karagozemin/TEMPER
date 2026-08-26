@@ -13,9 +13,17 @@ function resolveDbPath(): string {
   const fromEnv = process.env.DATABASE_URL;
   if (fromEnv && fromEnv.length > 0) {
     // Accept both plain paths and file: URLs.
-    return fromEnv.replace(/^file:/, "");
+    const configured = fromEnv.replace(/^file:/, "");
+    return path.isAbsolute(configured)
+      ? configured
+      : path.resolve(process.cwd(), configured);
   }
-  const dataDir = path.join(process.cwd(), "data");
+
+  // Vercel's deployed filesystem is read-only except for /tmp. Keep the
+  // local default convenient while allowing API routes to initialize there.
+  const dataDir = process.env.VERCEL
+    ? "/tmp/temper"
+    : path.join(process.cwd(), "data");
   fs.mkdirSync(dataDir, { recursive: true });
   return path.join(dataDir, "temper.db");
 }
