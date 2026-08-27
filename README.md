@@ -97,27 +97,6 @@ The golden path runs offline via a deterministic, clearly-labelled evaluator so
 the demo never depends on random LLM behaviour. Set `DEMO_MODE=false` and a
 Builder API key to run it against **real Minds**.
 
-## Screenshots
-
-**Landing**
-
-![Landing](docs/screenshots/landing.png)
-
-**Live incident** — legacy feed (all `SAFE`), the 5 → 1 convergence graph, TEMPER verdict
-
-![Live incident](docs/screenshots/live-incident.png)
-
-**Maya vs Chris** — the central contrast
-
-![Maya vs Chris](docs/screenshots/contrast.png)
-
-**Recovery** — incident outcome
-
-![Recovery](docs/screenshots/recovery.png)
-
-**Live Minds** — real Minds analysis + persistent history
-
-![Live Minds](docs/screenshots/live-minds.png)
 
 ## Tech stack
 
